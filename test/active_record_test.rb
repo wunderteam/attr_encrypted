@@ -1,32 +1,34 @@
 require File.expand_path('../test_helper', __FILE__)
 
-ActiveRecord::Base.establish_connection :adapter => 'sqlite3', :database => ':memory:'
+`dropdb attr_encrypted_test`
+`createdb attr_encrypted_test`
+ActiveRecord::Base.establish_connection :adapter => 'postgresql', :database => 'attr_encrypted_test'
 
 def create_tables
   silence_stream(STDOUT) do
     ActiveRecord::Schema.define(:version => 1) do
       create_table :people do |t|
-        t.string   :encrypted_email
+        t.json     :encrypted_email
         t.string   :password
-        t.string   :encrypted_credentials
+        t.json     :encrypted_credentials
         t.binary   :salt
-        t.string   :encrypted_email_salt
-        t.string   :encrypted_credentials_salt
-        t.string   :encrypted_email_iv
-        t.string   :encrypted_credentials_iv
+        t.json     :encrypted_email_salt
+        t.json     :encrypted_credentials_salt
+        t.json     :encrypted_email_iv
+        t.json     :encrypted_credentials_iv
       end
       create_table :accounts do |t|
-        t.string :encrypted_password
-        t.string :encrypted_password_iv
-        t.string :encrypted_password_salt
+        t.json :encrypted_password
+        t.json :encrypted_password_iv
+        t.json :encrypted_password_salt
       end
       create_table :users do |t|
         t.string :login
-        t.string :encrypted_password
+        t.json :encrypted_password
         t.boolean :is_admin
       end
       create_table :prime_ministers do |t|
-        t.string :encrypted_name
+        t.json :encrypted_name
       end
     end
   end
