@@ -127,17 +127,14 @@ module AttrEncrypted
       iv_name = "#{encrypted_attribute_name}_iv".to_sym
       salt_name = "#{encrypted_attribute_name}_salt".to_sym
 
-      instance_methods_as_symbols = attribute_instance_methods_as_symbols
-      attr_reader encrypted_attribute_name unless instance_methods_as_symbols.include?(encrypted_attribute_name)
-      attr_writer encrypted_attribute_name unless instance_methods_as_symbols.include?(:"#{encrypted_attribute_name}=")
+      define_method(encrypted_attribute_name) { read_serialized_attribute(encrypted_attribute_name, 'ct') }
+      define_method("#{encrypted_attribute_name}=") { |value| write_serialized_attribute(encrypted_attribute_name, 'ct', value) }
 
-      if options[:mode] == :per_attribute_iv_and_salt
-        attr_reader iv_name unless instance_methods_as_symbols.include?(iv_name)
-        attr_writer iv_name unless instance_methods_as_symbols.include?(:"#{iv_name}=")
+      define_method(iv_name) { read_serialized_attribute(encrypted_attribute_name, 'iv') }
+      define_method("#{iv_name}=") { |value| write_serialized_attribute(encrypted_attribute_name, 'iv', value) }
 
-        attr_reader salt_name unless instance_methods_as_symbols.include?(salt_name)
-        attr_writer salt_name unless instance_methods_as_symbols.include?(:"#{salt_name}=")
-      end
+      define_method(salt_name) { read_serialized_attribute(encrypted_attribute_name, 'salt') }
+      define_method("#{salt_name}=") { |value| write_serialized_attribute(encrypted_attribute_name, 'salt', value) }
 
       define_method(attribute) do
         instance_variable_get("@#{attribute}") || instance_variable_set("@#{attribute}", decrypt(attribute, send(encrypted_attribute_name)))
@@ -300,6 +297,18 @@ module AttrEncrypted
     end
 
     protected
+
+      def read_serialized_attribute(attribute, serialization_key)
+        data = read_attribute(attribute)
+        data[serialization_key] if data.present?
+      end
+
+      def write_serialized_attribute(attribute, serialization_key, value)
+        data = read_attribute(attribute) || {}
+        data[serialization_key]= value
+        write_attribute(attribute, data)
+        value
+      end
 
       # Returns attr_encrypted options evaluated in the current object's scope for the attribute specified
       def evaluated_attr_encrypted_options_for(attribute)
